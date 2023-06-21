@@ -3,6 +3,7 @@ import ptBr from "date-fns/locale/pt-BR";
 import styles from "./Post.module.css";
 import { Comment } from "./Comment";
 import { Avatar } from "./Avatar";
+import { useState } from "react";
 
 export function Post({ author, content, publishedAt }) {
   //Alternativa javascript para formatação de data
@@ -24,6 +25,28 @@ export function Post({ author, content, publishedAt }) {
     addSuffix: true,
   });
 
+  const [comments, setComments] = useState([]);
+
+  const [newCommentText, setNewCommentText] = useState("");
+
+  function handleCreateNewComment() {
+    event.preventDefault();
+    setComments([...comments, newCommentText]);
+    setNewCommentText("");
+  }
+
+  function handleNewCommentChange() {
+    setNewCommentText(event.target.value);
+  }
+
+  function deleteComment(commentToDelete) {
+    // imutabilidade -> as variáveis não sofrem mutação, nós criamos um novo valor (um novo espaço de memória)
+    const commentsWithoutDeleteOne = comments.filter(comment => {
+      return comment !== commentToDelete
+    })
+    setComments(commentsWithoutDeleteOne);
+  }
+
   return (
     <article className={styles.post}>
       <header>
@@ -44,21 +67,25 @@ export function Post({ author, content, publishedAt }) {
       <div className={styles.content}>
         {content.map((line) => {
           if (line.type === "paragraph") {
-            return <p>{line.content}</p>;
+            return <p key={line.content}>{line.content}</p>;
           } else if (line.type === "link") {
             return (
-              <p>
+              <p key={line.content}>
                 <a href="">{line.content}</a>
               </p>
             );
           }
         })}
       </div>
-      <form className={styles.commentForm}>
+      <form onSubmit={handleCreateNewComment} className={styles.commentForm}>
         <strong>Deixe seu feedback</strong>
         <textarea
+          name="comment"
           className={styles.comment}
           placeholder="Deixe um comentário"
+          value={newCommentText}
+          onChange={handleNewCommentChange}
+          required
         ></textarea>
         <footer>
           <button type="submit" className={styles.publish}>
@@ -67,9 +94,15 @@ export function Post({ author, content, publishedAt }) {
         </footer>
       </form>
       <div className={styles.commentList}>
-        <Comment />
-        <Comment />
-        <Comment />
+        {comments.map((comment) => {
+          return (
+            <Comment
+              key={comment}
+              content={comment}
+              onDeleteComment={deleteComment}
+            />
+          );
+        })}
       </div>
     </article>
   );
